@@ -11,6 +11,6 @@ text = "AS THE PALATOFIRM EXPANDS SAND IS SUED BY OTHER OPRIDUYETS THERE MAY BE 
 text = text.split(sep = " ",maxsplit = -1)
 
 text_vocab = set(w.lower() for w in text if w.isalpha())
-english_vocab = set(w.lower() for w in brown.words(categories="reviews"))
+english_vocab = set(w.lower() for w in brown.words())
 unusual = text_vocab - english_vocab
 print(list(unusual))
