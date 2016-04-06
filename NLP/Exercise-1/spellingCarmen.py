@@ -11,7 +11,7 @@ import nltk
 
 cadena=input("Insert a sentence to check spelling mistakes:\n")
 
-english_vocab = set(w.lower() for w in nltk.corpus.words.words())
+english_vocab = set(w.lower() for w in brown.words())
 
 def spelling_mistakes(text):
     mistakesList=list()
