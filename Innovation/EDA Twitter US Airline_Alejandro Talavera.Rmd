@@ -1,0 +1,143 @@
+---
+title: "EDA Twitter US Airline Sentiment Analysis"
+author: "Alejandro Talavera Rodríguez"
+output: html_document
+---
+
+### Introduction:
+
+The aim of this document is to develop an Exploratory Data Analysis (EDA) over "US Airline Sentiment Analysis".  Twitter data was scraped from February of 2015 and contributors were asked to first classify positive, negative, and neutral tweets, followed by categorizing negative reasons (such as "late flight" or "rude service"). The data providing on Kaggle is a slightly reformatted version of the original source.
+
+```{r}
+library("ggplot2")
+library("gridExtra")
+library("dplyr")
+```
+
+```{r}
+setwd("~/Documents/MBD - IE/3_Third Term/Running Innovation & Creation Processes/airline-twitter-sentiment")
+tweet <- read.csv("Tweets.csv")
+attach(tweet)
+
+str(tweet)
+```
+
+Taking a look to last output we realize that our dataset is formed by 14640 observations, each one being described by 15 variables. Taking a first approach to the variables, we can see that "tweet_id" is not going to be a valued variable. In the other hand, "airline_sentiment", "airline" and "negativereason" can provide some insights about the dataset. 
+
+Another function that is very usefull is summary().
+
+```{r}
+summary(tweet)
+```
+
+Looking at the output of the function, we will discard the confidence variables and also the "airline_sentiment_gold" variable because those do not seem to provide any helpful insight about the dataset and they have a lot of NaN values.
+
+The variables "text" and "retweet_count" could help to develop a Sentiment Analysis studio and "tweet_cord" and "tweet_created" could help to make a geographical and temporal analysis. "tweet_location" is probably not a helpful variable because the values are not normalized and some of them does not correspond to real locations.
+
+#### Section 1: Most tweets are positive or negative? Are they equally distributed?
+
+```{r}
+proportion_table <- as.data.frame(prop.table(table(tweet$airline_sentiment)))
+colnames(proportion_table) = c('Sentiment', 'Frequency')
+proportion_table_order = proportion_table[order(proportion_table$Frequency, decreasing = TRUE),]
+proportion_table_order
+```
+
+Our first output is that the majority of the tweets are tagged as negative (63%). Only 16% of tweets are positive. This means that Twitter is used by users to complain more than to create a good brand value for Airlines Companies. Those companies should work to improve their Net Promoter Score (NPS). A deeper analyze could reveal the reason behind this negative tweets.
+
+We can see that as a barplot to get a more visual feeling of the data: the amount of negative tweets is higher than neutral and positive tweets together.
+
+```{r}
+#qplot(x=airline_sentiment, data=tweet)
+prop_bar <- ggplot(proportion_table, aes(x = Sentiment, y = Frequency, fill = Sentiment))
+prop_bar + geom_bar(stat = 'identity') + ggtitle("Overall Sentiment") + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.y = element_text(vjust = 2), axis.title.x = element_text(vjust = -1))
+```
+
+#### Section 2: Are the tweets equally distributed between Airlines Companies? Is there any company that receives more tweets than the others?
+
+```{r}
+airline_frequency <- as.data.frame(prop.table(table(tweet$airline)))
+colnames(airline_frequency) = c('airline', 'Frequency')
+airline_frequency_order = airline_frequency[order(airline_frequency$Frequency, decreasing = TRUE),]
+airline_frequency_order
+```
+
+In this dataset we find six different Airline Companies. We can see that United is receiving most of the tweets (26%) and Virgin America is only receiving 3% of the tweets. Maybe this last company should focus more in its social media strategy. The other four companies receives 15-20% each one.
+
+As we did before, ploting the output helps to understand the data. We can check that United has been mentioned more times
+
+```{r}
+airfreq_bar <- ggplot(airline_frequency, aes(x = airline, y = Frequency, fill = airline))
+airfreq_bar + geom_bar(stat = 'identity') + scale_fill_brewer() + ggtitle('Percentage of Tweets per Airline') + guides(fill = FALSE) + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1))
+```
+
+#### Section 3: We would like to check if all the Airline Companies receive the same proportion of negative, neutral and positive tweets.
+
+```{r}
+prop_sentiment_airline <- as.data.frame(prop.table(table(tweet$airline_sentiment, tweet$airline)))
+colnames(prop_sentiment_airline) = c('Sentiment', 'Airline', 'Percentage_Tweets')
+
+prop_airline_bar = ggplot(prop_sentiment_airline, aes(x = Airline, y = Percentage_Tweets, fill = Sentiment)) + ggtitle('Proportion of Tweets per Airline') + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -1))
+prop_airline_bar + geom_bar(stat = 'identity', position = 'fill')
+```
+
+We can easily check that "US Airways", "American" and "United" are receiving more negative tweets than neutral and positive. In the other hand, "Delta", "Southwest" and "Virgin America" seem to receive a more equal amount of every type of tweet.
+
+This result is not surprising. After checking that most of the tweets are negative and the companies that receive more tweets, what we see in the barplot that the companies which receive more tweets is because they receive more negative tweets than the other companies.
+
+In this situation, being a company well-known in Twitter is not being a positive fact.
+
+#### Section 4: Can we check if there is a particular reason behind the negative tweets?
+
+First, we need to pick up only the tweets tagged as negative and then we will rank the reasons based on their appearence frequency.
+
+```{r}
+tweet_negative <- tweet %>%
+  filter(airline_sentiment=='negative')
+reason = as.data.frame(prop.table(table(tweet_negative$negativereason)))
+colnames(reason) = c('Reason', 'Frequency')
+reason_order = reason[order(reason$Frequency, decreasing = TRUE),]
+reason_order
+```
+
+In the end, there are only 10 reasons to explain a negative reason. The most frequent reason given for the negative tweets is 'Customer Service Issue' followed by 'Late flight'. In 13% of the cases they can not explain the reason, so maybe the dataset should be curated a litle bit more.
+
+
+
+#### Section 5: In general, how much the tweets are retweeted in this dataset?
+
+```{r}
+retweet <- t(table(tweet$retweet_count))
+retweet
+```
+
+The output is a bit messy, the first row means the number of retweets and the second row means the frequency of tweets with that number of retweets in the dataset.
+
+In our dataset, 13873 tweets (out of 16640, 83%) are retweeted 0 times and 640 tweets (3.8%) were retweeted once. The top tweet in our dataset was retweeted 44 times. We can conclude that tweets are not spread a lot along the net.
+
+#### Section 6: Tweets comes from all around the world or are concentrated in a specific part of the world?
+
+We will show up the Top 10 of the most frequent "user_timezone" in the dataset:
+
+```{r}
+timezone <- as.data.frame(prop.table(table(tweet$user_timezone)))
+colnames(timezone) <- c('timezone', 'Frequency')
+timezone <- timezone[order(timezone$Frequency, decreasing = TRUE),]
+head(timezone, 10)
+```
+
+Looking at the output, the Top 1 is a not defined timezone. We need to apply some tranformations to the dataset.
+
+The majority of the timezones are in the States. This is not surprising at all, given that the six Airlines Companies analized are based on USA.
+
+### Conclusions:
+
+- We could do a deeper analysis using "tweet_created" to understand if tweets were created around a particular date by some reason.
+- Using "text" we could analyze most repeated words or hashtags which could help us to understand better the reasons behind a negative or a positive tweet.
+- Using "name" we could analyze if some users are related between them, but this dataset seems to be more useful for a Sentiment Analysis rather than a Social Network Analysis, so that would be a bad idea.
+- Most tweets are tagged as "negative" (63%).
+- United is receiving most of the tweets (26%) and Virgin America is the least mentioned company in the dataset(3.4%). The rest of the companies receives around 15-20% of tweets.
+- Companies receiving a lot of tweets have a majority of negative tweets. Delta, Southwest and Virgin America are more balanced in the amount of negative, neutral and positive tweets.
+- The most frequent reason behind negative tweets are "Customer Service Issue (31%)" (which seems very general) and "Late Flight" (18%). In 13% of the cases, the reason can not be identified. We suggest to do a Sentiment Analysis on the tweet text to obtain a better tag for the reason beyond the ones given.
+- Most of the tweets are not retweeted (83%).
+- Most of the tweets come from the States, that it is not surprising given that Airlines Companies analized are based on USA.
