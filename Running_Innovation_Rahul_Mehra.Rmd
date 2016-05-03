@@ -1,0 +1,114 @@
+---
+title: "US Twitter Sentiment Analysis"
+author: "Rahul Mehra - (Group D)"
+output: html_document
+---
+
+The Twitter US airline sentiment data consist of information related to the passenger's feelings about their flight experience. The tweets were collected for US airlines namely,
+
+```{r}
+# Loading the dataset
+tweets <- read.csv("Tweets.csv")
+# Different type of sentiments
+levels(tweets$airline)
+```
+
+The dataset consist of different fields which provides information related to sentiments of people i.e. "Positive|Negative|Neutral" and other fields like:
+
+```{r cars}
+# Names of variables
+names(tweets)
+
+# Dimension of dataset
+dim(tweets)
+```
+The dataset has 14640 observations and 15 variables, which is good enough to perform analysis. The sample size is much greater than the lowest value of 30. Hence, the sample size is enough to perform the basic tests and study. 
+
+```{r}
+# Total number of different tweets
+table(tweets$airline_sentiment)
+```
+The table above shows that "Negative Tweets" are way more as compared to neutral and positive tweets. Since, the table doesn't show any information regarding the tweets per flight, it should be calculated using the cross table between the "airline" variable and "airline_sentiment" variable. The table and plot of sentiments per flight is shown below:
+
+```{r}
+# Sentiments per Airline
+
+table(tweets$airline_sentiment,tweets$airline)
+
+```
+From the table we can see that United Airlines have the maximum number of negative sentiments associated to it i.e. 2633, followed by US Airways and American Airways.
+
+Since, the numbers doen't make much sense, a plot can be more helpful to see the proportion of each tweet per flight.
+```{r}
+# Plot of Sentiments per flight
+spineplot(tweets$airline,tweets$airline_sentiment,col =c("black","blue","yellow"),xlab = "Airlines Name",ylab = "Passenger's Sentiment")
+```
+
+
+In order to look for the reasons of these negative tweets, we need to look at the the reasons of these negative tweets per flight. The table is a follows:
+
+```{r}
+# Sunsetting negative sentiments
+neg_tweets <- as.data.frame(tweets[tweets$airline_sentiment=="negative",])
+# Table of negative reasons 
+table(neg_tweets$negativereason)
+```
+We can see there are many reasons for the negative tweets, but seems like "Customer Service Issue" and "Late Flight" have maximum weightage.
+
+In order to get more sense about the negative response, lets have a look at negative reasons per airline.
+
+```{r}
+par(mfrow=c(2,2))
+# Late Flight reason per Airlines
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Late Flight",]
+plot(flight_delay$airline,main = "Late Flight",col = c("black","blue","yellow","green","purple","grey"))
+
+# Damaged Luggage reason per Airlines
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Damaged Luggage",]
+plot(flight_delay$airline,main = "Damaged Luggage",col = c("black","blue","yellow","green","purple","grey"))
+
+
+
+# Customer Service Issue per Airlines
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Customer Service Issue",]
+plot(flight_delay$airline,main = "Customer Service Issue",col = c("black","blue","yellow","green","purple","grey"))
+
+# Cancelled flights per Airlines
+
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Cancelled Flight",]
+plot(flight_delay$airline,main = "Cancelled Flight",col = c("black","blue","yellow","green","purple","grey"))
+
+par(mfrow=c(2,2))
+
+# Flight Attendant Complaints per Airlines 
+
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Flight Attendant Complaints",]
+plot(flight_delay$airline,main = "Flight Attendant Complaints",col = c("black","blue","yellow","green","purple","grey"))
+
+# Flight Booking Problems per Airlines
+
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Flight Booking Problems",]
+plot(flight_delay$airline,main = "Flight Booking Problems",col = c("black","blue","yellow","green","purple","grey"))
+
+# Lost Luggage per Airlines
+flight_delay <- neg_tweets[neg_tweets$negativereason=="Lost Luggage",]
+plot(flight_delay$airline,main = "Lost Luggage",col = c("black","blue","yellow","green","purple","grey"))
+
+#  Long lines per Airlines
+flight_delay <- neg_tweets[neg_tweets$negativereason=="longlines",]
+plot(flight_delay$airline,main = "Long lines",col = c("black","blue","yellow","green","purple","grey"))
+```
+
+We can see that the airlines like United, US Airways and American have maximum number of negative tweets in each of the reasons mentioned.
+
+Hypothesis: "Are the flights with high number of negative tweets due to these reasons or is it due to some other factors"
+
+The negative reasons mentioned by the passengers per flight can be due to these reasons or due to external factors like number of passengers travelling in different flights or origin or dentination of the flights. The hypothesis can be tested by using Chi-sq test whether these reasons are significant enough or some external factors leads to increase of negative reasons in a particular flight.
+
+Conclusion: The dataset lack of these informations on the total number of passengers on these fligths and also the origin and destination of the flights which can be a great factors for these negative reasons. Dataset doesn't have any missing, but surely lack important information regarding location and coordinates of tweet. Including such factors can possibly relate to the negative reasons per flight.
+
+
+
+
+
+
