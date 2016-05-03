@@ -1,0 +1,19 @@
+---
+title: "EDA Twitter US Airline Sentiment"
+output: html_document
+---
+
+
+
+```{r}
+library("ggplot2")
+```
+
+```{r}
+setwd("~/Documents/MBD - IE/3_Third Term/Running Innovation & Creation Processes/airline-twitter-sentiment")
+tweet <- read.csv("Tweets.csv")
+
+str(tweet)
+```
+
+
