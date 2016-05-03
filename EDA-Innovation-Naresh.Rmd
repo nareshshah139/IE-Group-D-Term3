@@ -1,0 +1,269 @@
+---
+title: "EDA-Innovation-Naresh"
+author: "Naresh"
+date: "April 29, 2016"
+output: pdf_document
+---
+Dataset Selected: Twitter US Airline Dataset
+
+```{r, echo=F, include = F}
+library('readr')    # read files
+library('ggplot2')  # visualization
+library('ggthemes') # visualization
+library('dplyr')    # data manipulation
+library('stringr')
+library('gridExtra')
+library('maps')
+
+getwd()
+setwd("/Users/nareshshah/Downloads/airline-twitter-sentiment")
+tweets = read.csv("tweets.csv")
+str(tweets)
+```
+
+Data has been loaded!
+```{r - Basic Numerical Analysis, echo = F}
+prop.table(table(tweets$airline_sentiment, tweets$airline))
+
+smallData = as.data.frame(prop.table(table(tweets$airline_sentiment, tweets$airline)))
+colnames(smallData) = c('Sentiment', 'Airline', 'Percentage_Tweets')
+
+gbar = ggplot(smallData, aes(x = Airline, y = Percentage_Tweets, fill = Sentiment)) + ggtitle('Proportion of Tweets per Airline') +
+theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -1))
+
+gbar + geom_bar(stat = 'identity')
+```
+Clearly it seems that United Airlines needs to work on improving its services. It receives far too many negative tweets.
+
+```{r - Reasons for negative sentiment, echo = F}
+
+negTweets = as.data.frame(table(tweets$negativereason))
+colnames(negTweets) = c('Reason', 'Frequency')
+negTweets = negTweets[-1, ] # remove first raw as it has no reason specified
+
+
+g = ggplot(negTweets, aes(x = Reason, y = Frequency)) + geom_bar(stat = 'identity', fill = 'pink')
+g = g + ggtitle('Reasons for Negative Sentiment')
+g = g + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -0.1),
+              axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+g
+```
+Digging deeper it is obvious that Customer Service is a pain point for most of the negative tweets.
+
+
+
+```{r - Reasons for negative tweets per airline, echo = F}
+
+#g = ggplot(negTweets, aes(x = Reason, y = Frequency)) + geom_bar(stat = 'identity', fill = 'pink') + ggtitle('Reasons for Negative Sentiment')+ theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -0.1),              axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+#g
+```
+
+We now prepare the data with respect to user mentions within the tweets. Perhaps another aspect to look at is a focus on the customers who are more likely to spread information via twitter as a social network. We will look at this from two points of view: Via user_mentions and via retweet counts. These customers(with high number of user_mentions) are likely to be central figures or atleast well connected entities within the social network.
+
+
+
+```{r - Data Prep 1, echo = F}
+tweets$mentions = sapply(tweets$text, function(x) str_count(x,'@'))
+maxMentions = max(tweets$mentions)
+
+tweets$mentionsF[tweets$mentions == 1] <- '1'
+tweets$mentionsF[tweets$mentions == 2] <- '2'
+tweets$mentionsF[tweets$mentions %in% c(3:maxMentions)] <- '3+'
+
+tweets$mentionsF <- factor(tweets$mentionsF)
+
+sentPlt     <- c('red','blue','green')
+sentBreaks  <- c('positive','neutral','negative')
+```
+Here's a basic visualization of how many people were mentioned in the twitter dataset and the density distribution of user_mentions.
+
+```{r - Visualization of mentions in Tweet distribution, echo = F}
+ggplot(tweets, aes(x = mentions)) + 
+  geom_density(fill = '#99d6ff', alpha=0.4) +
+  labs(x = 'Number of @s') +
+  theme_few() +
+  theme(text = element_text(size=12))
+```
+
+Setting a fixed color of red for negative, blue for neutral and green for negative sentiments in tweets. We look at the correlation between the negative sentiment tweets and how they spread(as a function of user_mentions)
+
+```{r - Visualization of distribution of mentions with respect to sentiment, echo = F}
+ggplot(tweets, aes(x = mentionsF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of mentions(@ used in tweets)', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=12))
+```
+
+Now we try to look at whether there is a significant difference between airline with respect to how they treat influencers(people with high number of user_mentions in their tweets)?
+
+
+```{r - Same but looking at it per airline company, echo = F}
+ggplot(tweets, aes(x = mentionsF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  facet_wrap(~airline) +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of @s', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=12))
+```
+
+It seems like the airlines do indeed treat the people who are influencers much better on an average. With the only exception being Delta airlines and even that with a very low difference.
+
+
+\newpage
+```{r - Number of people mentioned per timezone from which user tweeted. Likely because user belongs to that timezone,fig.width = 6.5, fig.height=6.5, echo = F}
+ggplot(tweets, aes(x = mentionsF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  facet_wrap(~user_timezone) +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of people mentioned', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=8))
+
+```
+
+Is the number of user mentions dependent on where the user tweeted from ? We assume here that users tweet from their home city. Therefore if this assumption holds true, we can understand two things: The general attitude of people from certain places (generally positive/negative/neutral tweets). This will allow the airline companies to form a matrix to cater specifically to people from certain countries and focus on treating them better if they form a significant amount of their userbase. This can also allow companies to re-evaluate their crew performance on particular flight routes. 
+
+Second, companies can perhaps focus a bit more on routes where the information spread is far more quicker or rather cities where a lot more people are likely to recieve poor sentiments about the airline if there is a negative tweet about the airline.
+\newpage
+
+```{r - Looking at retweet counts, echo = F}
+ggplot(tweets, aes(x = retweet_count)) + 
+  geom_density(fill = '#99d6ff', alpha=0.4) +
+  labs(x = 'Number of @s') +
+  theme_few() +
+  theme(text = element_text(size=12))
+
+```
+
+
+If a post had a high retweet count, it means that it was likely to have been a common problem/point of pain for many passengers.
+
+
+```{r - Visualization of retweet count with respect to sentiment, echo = F}
+maxretweets = max(tweets$retweet_count)
+
+tweets$retweetF[tweets$retweet_count %in% c(0:10)] = '1'
+tweets$retweetF[tweets$retweet_count %in% c(11:20)] = '2'
+tweets$retweetF[tweets$retweet_count > 21]  = '3'
+
+tweets$retweetF = factor(tweets$retweetF)
+
+ggplot(tweets, aes(x = retweetF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of retweets(@ used in tweets)', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=12))
+
+```
+
+
+Here 1 indicates low, 2 indicates medium and 3 indicates high retweet count.
+
+```{r, retweet count per airline, echo=F}
+ggplot(tweets, aes(x = retweetF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  facet_wrap(~airline) +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of @s', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=12))
+```
+
+We look at the retweet count per airline and try to see if there are any significant differences.
+
+
+```{r, retweet count per timezone, echo = F}
+ggplot(tweets, aes(x = retweetF, fill = airline_sentiment)) + 
+  geom_bar(position = 'fill', colour = 'black') +
+  facet_wrap(~user_timezone) +
+  scale_fill_manual(name   = 'Tweet\nSentiment',
+                    values = sentPlt,
+                    breaks = sentBreaks) +
+  labs(x = 'Number of retweets', y = 'Proportion') +
+  theme_few() +
+  theme(text = element_text(size=8))
+```
+\newpage
+
+There seem to be some retweets which received a lot of retweets. We look at why these tweets struck a chord with the community.
+
+```{r - Suspicious Retweets, echo = F}
+
+table(tweets$retweet_count)
+
+as.character(subset(tweets, retweet_count ==44)$text);
+print(" ")
+as.character(subset(tweets, retweet_count ==32)$text);
+print(" ")
+as.character(subset(tweets, retweet_count ==31)$text);
+print(" ")
+as.character(subset(tweets, retweet_count ==28)$text)
+
+```
+
+3 of these tweets were negative issues about problems faced by a particular influencer as a customer. The 4th article is one on nostalgia. It is quite obvious but perhaps leads to advertising ideas to build brand loyalty for the airline company by reminiscing nostalgic events from the past.
+
+
+```{r - Tweet location study and Visualization, echo = F}
+location = tweets$tweet_coord
+location = location[complete.cases(location)] # remove NAs
+location = as.data.frame(location)
+location$count =  1 # add a count column filled with 1s
+location$location = as.character(location$location)
+#remove duplicate locations and count the times they appeared, write the count in the count column
+location = aggregate(count~location, data = location, FUN = sum)
+location = location[-5,] # removes row containing coords [0,0] which are probably wrong
+coords = strsplit(location$location, ',') 
+
+# separate lat and long from location
+lat = NULL
+long = NULL
+for (i in 1:length(coords)) {
+    lat = c(lat, substring(coords[[i]][1], 2)) # removes first character which is [
+    long = c(long, coords[[i]][2]) 
+}
+
+location$lat = lat
+location$long = long
+
+# remove ]
+location$long = substr(location$long, 1, nchar(location$long)-1)
+
+location$lat = as.numeric(location$lat)
+location$long = as.numeric(location$long)
+
+require(maps)
+world_map <- map_data("world")
+g1 = ggplot()
+g1 = g1 + geom_polygon(data=world_map, aes(x=long, y=lat, group = group), colour="black", fill = 'lightblue') + 
+ggtitle("Location of tweets across the World")
+g1 = g1 + geom_point(data=location, aes(x=long, y=lat, size = count), color="coral1") + scale_size(name="Total Tweets")
+g1 = g1 + ylim(-50, 80)
+
+states <- map_data("state")
+g2 = ggplot()
+g2 =g2 + geom_polygon(data=states, aes(x=long, y=lat, group = group), colour="black", fill = 'lightblue') + 
+ggtitle("Location of tweets across the States")
+g2 = g2 + geom_point(data=location, aes(x=long, y=lat, size = count), color="coral1") + scale_size(name="Total Tweets")
+g2 = g2 + xlim(-125, -65) + ylim(25, 50)
+#grid.arrange(g, ncol=1, nrow = 2)
+
+grid.arrange(g1, g2, ncol=1, nrow = 2)
+
+```
+
+Lastly, we look at tweets from across the world and the across the states and try to find major points where people are likely to comment or communicate more to the airlines about what they want/expect from the airline companies.
