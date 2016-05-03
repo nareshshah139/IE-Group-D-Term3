@@ -1,0 +1,189 @@
+---
+title: "RDA - US Airlines Twitter Sentiment Analysis"
+author: "Christopher Brandenburg"
+date: "26 April 2016"
+output: pdf_document
+---
+Exploratory Data Analysis
+Twitter Sentiment Analysis - American Airlines
+
+Introduction:
+The data we are going to look at in this paper is a data dump of 14640 observations with 15 variables of Twitter data regarding openly voiced criticism in from of tweets of US airline customers. These tweets are tied to a tweet ID and user ID
+
+The 15 variables include
+tweet_id <- unique ID per tweet
+airline_sentiment <- factor of 3 levels: negative, neutral and postive 
+airline_sentiment_confidence <- confidence score of airline_sentiment classification
+negativereason <- reason for complaint extracted from tweet
+negativereason_confidence <- confidence score for negativereason
+airline <- airline mentioned in the tweet
+airline_sentiment_gold <- factor of 3 levels: negative, neutral and postive
+name <- twitter username
+negativereason_gold <- other reasons, identify what "gold" menas
+retweet_count <- how many times a tweet was retweeted
+text <- content of the tweet
+tweet_coord <- coordinates of the tweet (incase location services are activated)
+tweet_created <- creation date of the tweet
+tweet_location <- locationin format city, state (very messy)
+user_timezone <- timezone the user posted the tweet in
+
+Variables that could be of particular interest to us would be 
+airline_sentiment
+negativereason
+airline
+airline_sentiment_gold (figure out the difference between the two)
+negativereason_gold
+name
+retweet_count
+
+Values we could potentially work with would be ch_id, program_duration, watching_time, timeslot, date, zipcode and coef. uid might be useful for aggregating data as well as ch_id.
+
+
+Questions to answer:
+1. How do different airlines stack up in feedback tweets they have received?
+- which airlines is doing particularly bad
+- whats the biggest issue they have
+2. Are there users that are particularly loud?
+- are they heard
+3. Are users more likely to voice criticism vs praise?
+
+Loading the different libraries
+```{r - load libraries, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(gmodels)
+library(maps)
+```
+
+Loading the data
+```{r - data, warning=FALSE, message=FALSE}
+df = read.csv("tweets.csv")
+```
+Summary Statistics of the data
+```{r, warning=FALSE, message=FALSE}
+#summary statistics of all the variables in the dataset
+summary(df)
+str(df)
+#per column the number of missing values
+colSums(is.na(df)) 
+
+```
+
+Histograms to check distributions
+```{r, warning=FALSE, message=FALSE}
+#airline sentiment confidence
+ggplot(df, aes(x=airline_sentiment_confidence)) + geom_histogram(binwidth=0.01)
+
+#retweet count
+ggplot(df, aes(x=retweet_count)) + 
+geom_histogram(binwidth=1)
+```
+Many scores are between 0.5 and 0.7 confidence, most are 100 confident in the negativereason.
+
+Looking at cities to check content of the field and counts
+```{r, warning=FALSE}
+cities = df %>%
+  group_by(tweet_location) %>%
+  summarise(count= length(tweet_location)) %>%
+  filter(count > 2)
+
+head(cities,10)
+
+```
+Nothing useful to find here at this point in time.
+
+
+1. How do different airlines stack up in feedback tweets they have received?
+- which airlines is doing particularly bad
+- whats the biggest issue they have
+```{r, warning=FALSE, message=FALSE}
+ggplot(df, aes(x=airline)) + geom_bar() + 
+  ggtitle("Tweet Count by Airline") + 
+  xlab("Airline") + 
+  ylab("Count")
+
+tweet_airline = df %>%
+  group_by(airline) %>%
+  summarise(count= length(airline))
+print(tweet_airline)
+```
+Judging by the chart and the table output it becomes clear that United has the highest count of tweets aimed at them. American, Delta, Southwest and US Airways seem to have similar amounts of tweets aimed at them while Virgin America has the least amount of tweets directed at them.
+
+We will now look into how the sentiment levels behave for each of the airlines.
+```{r, warning=FALSE, message=FALSE}
+ggplot(df, aes(x=airline, fill =airline_sentiment )) + 
+  geom_bar(position="dodge") +
+  ggtitle("Sentiment by Airline") + 
+  xlab("Airline") + 
+  ylab("Count")
+
+sentiment_airline = df %>%
+  group_by(airline, airline_sentiment) %>%
+  summarise(count= length(airline))
+print(sentiment_airline)
+```
+We can see that American, US Airways and United clearly have significantly higher amounts of negative tweets compared to neutral and positive tweets. People seem to complain a lot about these three companies. Delta and Southwest also exhibit a higher number of negative tweets but not as significant as the previous 3. Virgin America with the lowest number of tweets seems to have balance between negative, neutral and positive.
+
+The question now arises what exactly the reasons are for people complaining to airlines.
+```{r, warning=FALSE, message=FALSE}
+complaints = df %>%
+  group_by(negativereason) %>%
+  summarise(count=length(negativereason))
+
+ggplot(df, aes(x=negativereason)) + geom_bar() +
+  ggtitle("Count by negativereason") + 
+  xlab("Reason for Complaint") + 
+  ylab("Count")
+
+df1 = df %>%
+  filter(negativereason !="")
+
+ggplot(df1, aes(x=negativereason)) + geom_bar() +
+  ggtitle("Count by negativereason") + 
+  xlab("Reason for Complaint") + 
+  ylab("Count")
+
+print(complaints)
+```
+Looking at the table complaints we can see that the three key issues customers complain about are "Customer Service Issues" with 2910 cases (without further information we can't dive deeper into this), "Late flight" is the second most mentioned reason with 1665 cases. "Cant tell" is the third biggest with 1190 cases but there is not more information to be extracted from this. 
+
+Breaking this down by Airline might yield a better picture to provide us with an indicator of how badly different airlines are handling CS issues and complaints.
+
+```{r, warning=FALSE, message=FALSE}
+complaints_airline = df %>%
+  group_by(airline, negativereason) %>%
+  summarise(count=length(negativereason))
+
+df1 = df %>%
+  filter(negativereason !="")
+
+ggplot(df1, aes(x=airline, fill=negativereason)) + geom_bar(position = "dodge") +
+  ggtitle("negativereason by Airline") + 
+  xlab("Reason for Complaint") + 
+  ylab("Count")
+
+print(complaints_airline)
+```
+Customer Service Issues stand out for American Airlines, US Airways and United. Southwest seems to be dealing with this as well. Delta has its most complaints coming from Late Flights as well as United and US Airways who seem to have a similar issue.
+Breaking down complaint reasons by reason for Virgin America we can see that they are very rare,however customer service seems to be a small issue as well. We take the assumption that Virgin America carries out less flights compared to their competitors so following this the number of complaints will be lower as well.
+
+3. Are users more likely to voice criticism vs praise?
+H0: Users are more likely to tweet if they have something to complain about. 
+```{r, warning=FALSE, message=FALSE}
+ggplot(df, aes(x=airline_sentiment)) + 
+  geom_bar() + ggtitle("Sentiment Counts") + xlab("Sentiment") + ylab("Count")
+```
+
+Judging by the chart we can clearly see that customers are much more likely to voice negative criticism compared to neutral sentinment or positive sentiment.
+
+Options:
+Following this inital exploration of the data and some small insights we can continue to propose a variety of ways in which data in this form could be used.
+
+Problem: 
+Airlines (all of them except Virgin America) receive a high number of complaints.  Most are one of three reasons. Public complaints on Twitter can reach a very wide audience and have implications for how customers perceive the brand and how many mistakes the make. 
+
+Solution:
+Potentially build a stream-based early warning system that identify complaints that might reach critical mass (high number of @mentions plus pickung up retweet speed, both things that need to be investigated further). They could potentially react quickly to Customer Service Issues, directly deal with lost bag claims etc. Airlines would like to avoid bad publicity in this form and have a monetary incentive/budget for a tool like this. We might want to investigate a product/tool in this from in more detail. 
+
+
+
