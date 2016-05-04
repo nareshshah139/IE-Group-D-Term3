@@ -1,0 +1,176 @@
+---
+title: "Airline Twitter Sentiment"
+author: "Ana Perez Vera"
+date: "27 April 2016"
+output: pdf_document
+---
+
+```{r}
+tt<- read.csv("~/Desktop/3rd TERM/RUNNING INNOVATION & CREATION PROCESSES/airline-twitter-sentiment/Tweets.csv")
+
+# Upload necessary libraries
+library(ggplot2)
+library(gridExtra)
+```
+
+The dataset choosen is "Airline Twitter Sentiment" where we can find 15 variables and 14640 different tweets. In order to get familiar with it and for better understanding in coming studies, we are going to do an exploratory data analysis. An overview of the data shows the following:
+
+```{r}
+# Quick view of the data
+str(tt)
+nrow(tt)
+ncol(tt)
+```
+
+First of all, we have to be conciuos about the quality of our data, so we need to check how clean it is.
+
+```{r}
+# Change cells containing "", " "  with NA
+tt = as.data.frame(apply(tt, 2, function(x) gsub("^$|^ $", NA, x)))
+
+# check which columns contain NA and how many
+tt1 = apply(tt, 2, function(x) sum(is.na(x)))
+
+tt1
+```
+
+In order to avoid future problems, we identify all the NA values, even those that are not specified as NA values. We obtain that airline_sentiment_gold and nevative_reason_gold are mostly empty columns, what indicates that are not going to be very representative for future analysis.
+
+Let's start parsing the variables:
+
+Firstly, airlane_sentiment allows us to identify which is the main sentiment in a glance. We use the probabilities for the three types os sentiments: negative, neutral and positive. Then we show the total number of tweets per sentiment in a numeric and visual way.
+
+```{r}
+# Table with sentiment probabilities 
+sentiment= data.frame(prop.table(table(tt$airline_sentiment)))
+colnames(sentiment) = c('Sentiment', 'Probability')
+sentiment
+
+# Table with total number of tweets per sentiment
+sentiment=data.frame(table(tt$airline_sentiment))
+colnames(sentiment) = c('Sentiment', 'Total')
+sentiment
+
+# Bar plot by airline_sentiment probabilities
+qplot(tt$airline_sentiment, xlab = "Type of Sentiment", ylab="Number of Tweets", main="Proportion of Tweets/Sentiment") 
+```
+
+Another way to understand the sentiment is representing it according to the airline. 
+
+```{r}
+airlines_sentiment = data.frame(table(tt$airline_sentiment, tt$airline))
+colnames(airlines_sentiment) = c('Sentiment', 'Airline', "NumTweets")
+
+gairlines_sent <- ggplot(airlines_sentiment, aes(x=Airline, y=NumTweets, fill=Sentiment)) + geom_bar(stat="identity") +  ggtitle('Tweets and Sentiment per Airline')
+gairlines_sent
+```
+
+From the previous graph we can see which is the airline with more/less tweets, furthermore, the predominant sentiment.
+
+From my point of view, the variable airline_sentiment_gold makes reference to the sentiments of those clients with a fidelity card or VIP card. All type of opinions and feedback are important but the one from our habitual customer even more.
+
+```{r}
+# probabilities
+airlines_gold = data.frame(prop.table(table(tt$airline_sentiment_gold, tt$airline)))
+colnames(airlines_gold) = c('Sentiment', 'Airline', "NumTweets")
+airlines_gold1 <- airlines_gold[order(tt$airline),]#ordenar
+airlines_gold
+
+#total
+airlines_gold = data.frame(table(tt$airline_sentiment_gold, tt$airline))
+colnames(airlines_gold) = c('Sentiment', 'Airline', "NumTweets")
+
+#visual
+gairlines_gold <- ggplot(airlines_gold, aes(x=Airline, y=NumTweets, fill=Sentiment)) + geom_bar(stat="identity") +  ggtitle('Tweets and Sentiment per Airline of Gold clients')
+gairlines_gold
+
+#Num of tweets per airline
+total = data.frame(table(tt$airline))
+colnames(total) = c('Airline', 'TotalTweets')
+
+total_order = total[order(total$TotalTweets, decreasing = T),]
+total_order
+```
+
+As a conclusion of the variables already analized we get that:
+
+- 60-70% of the tweets are about a negative experience
+
+- Virgin America is the company with less tweets, no gold clients tweets and the same proportion of positive, neutral and negative sentiment.
+
+- United is the airline with more tweets, followed by US Airways, American, Southwest and Delta.
+
+- While Delta, Virgin and Southwest have the same proportion of positive, neutral and negative sentiment, United, Airways and American have mostly negative sentiment.
+
+
+As it is observed the negative sentiment is the predominant, therefore we are going to analyze the main complain sources. From both the table and the graph we conclude the main sources of complains are:
+
+
+```{r}
+# Create a table which summarizes the number of tweets related with each reason
+negative = data.frame(table(tt$negativereason))
+colnames(negative) = c('Reason', 'Total')
+negative[order(negative$Total, decreasing = T),]
+
+# Visual comprehension of the main reasons.
+gneg = ggplot(negative, aes(x = Reason, y = Total)) + geom_bar(stat = 'identity', fill = 'lightblue')
+gneg = gneg + ggtitle('Reasons for Negative Sentiment') + theme(axis.text.x = element_text(angle = 50, size = 9, vjust = 0.4))
+gneg
+
+# Graphic reasons/airline
+reasons_airline = data.frame(table(tt$negativereason, tt$airline))
+colnames(reasons_airline) = c("Reason", "Airline", "Frequency")
+g_reasons = ggplot(reasons_airline, aes(x = Reason, y = Frequency, fill=Airline)) + geom_bar(stat = 'identity')
+g_reasons = g_reasons + ggtitle('Reasons for Negative Sentiment per Airline') + theme(axis.text.x = element_text(angle = 50, size = 9, vjust = 0.4))
+g_reasons
+```
+
+
+
+Afterwards, let's analyze what can be obtained from tweet_location. 
+There are 3081 different locations but if we pay attention to the data we see there are fake ones as: "in your fav mags & blogs!!!" or " Somewhere celebrating life.". Therefore, this variable is not really useful (at least by its own)
+
+```{r}
+loc = unique(tt$tweet_location)
+head(loc, 20)
+```
+
+Regarding the user_timezone, let's see what can we conclude:
+
+```{r}
+timezone = table(unique(tt$user_timezone))
+dim(timezone)
+timezone = data.frame(table(tt$user_timezone))
+colnames(timezone) = c('TimeZone' , 'TimesRepeated')
+timezone_order = timezone[order(timezone$TimesRepeated, decreasing = T),]
+head(timezone_order, 5)
+```
+
+From the time zone we get the most common zone where the tweets are posted, this information could be complementary with the location, in order to better aproximate the exactly location of the user.
+
+Additionally, we hace the variable tweet_coord:
+
+```{r}
+cord = table(unique(tt$tweet_coord))
+dim(cord)
+# total data - NA in tweet_cord
+14600-13621
+```
+
+Another complement for the user location are the coordinates, where there are many NA values but very few coordinates are repeated. That means that each row of information we have in this field (even it is aprox 7% of the data) it is quite informative.
+Using location, coordinates and time zone we can accurate the location.
+
+Tweet_created can be representative to detect the peak hours, if the tweet is posted at the momento, hours or days later, etc... 
+
+The number of retweets a tweet has can be representative. Although most of the tweets have not been retweeted, we can directly access to those that has been retweeted, for instance, 22 times.
+
+```{r}
+ret = table(tt$retweet_count)
+ret
+ret22 = subset(tt, retweet_count == 22)
+ret22$text
+```
+
+We can also analyze which are the most used words in tweets with negative and positive sentiment. To do it we split the data in two and then we can apply NLP techniques. (For future analysis)
+
+To sum up, I find quite interesting and clean this dataset, it would be really useful for future analysis. The main problem would be the inaccuracy of the location of the user but I believe it can be solved integrating the three variables: location, coordinates and time zone
