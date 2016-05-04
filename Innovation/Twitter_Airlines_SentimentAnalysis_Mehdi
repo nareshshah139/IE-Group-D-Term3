@@ -1,0 +1,214 @@
+---
+title: "Airline Sentiment Analysis"
+author: "Mehdi Nassih"
+output: pdf_document
+---
+
+The dataset we are analyzing here is extracted from Twitter and is related to tweets posted by a few thousand users across the United States of America and that concern the activity of airlines across the country. This data set has 15 differene variables represented for 14813 users. Every tweet is identified by an Identification number, along with the location, the geographical coordinates, and the time zone. A sentiment analysis is applied to those tweets in our dataset in order to measure the sentiment of the users towards every airline mentioned in the tweet and this measured by a confidence number that measures the level of confidence of every sentiment detected.
+
+We expect that this dataset will give a better understanding of the reasons behind the positive, neutral and negative tweets of our users, along with the reasons behind those tweets, the location from where they were posted online, among many other information.
+
+For our hypothesis, we believe that most of the users complain about bad experiences and only a few of them are able to comment on good ones and that most of the companies have common issues and present similar areas of improvement.
+
+In order to start our Exploratory Data Analysis, we will proceed with loading the different libraries that we will use.
+
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+library(readr)    
+library(ggplot2) 
+library(ggthemes) 
+library(dplyr)    
+library(stringr)  
+library(gridExtra)
+```
+
+In the following chunk, we load the data we will be using and display its structure.
+
+```{r}
+airlinetweets <- read_csv('/Users/mehdinassih/Desktop/airline-twitter-sentiment/Tweets.csv')
+
+str(airlinetweets)
+```
+
+As we can see in the structure above, our data is composed of 15 different variables that are mostly characters and that contain many Null values. In a similar analysis, I usually analyze the data using boxplots, but due to the limited number of numerical values here, I will not be able to extract any information those boxplots, so I will proceed analyzing the frequency of each sentiment detected in our tweets.
+The tweets in our dataset are divided into 3 differents groups: Nnegative, neurtal and positive.
+
+```{r}
+sentimentFrequency = as.data.frame(prop.table(table(airlinetweets$airline_sentiment)))
+colnames(sentimentFrequency) = c('Sentiment', 'Frequency')
+sentimentFrequency
+```
+
+We can see in the table above that more than 62% of the tweets are negative in our dataset, which explain the users use Twitter as a way to voice their concerns and raise publicly any issue that affects during their travels. 21% of the tweets are neutral and only 16% are positive in our dataset.
+
+Below is a representation of those percentages in a Pie Chart.
+
+```{r}
+pieChart = ggplot(sentimentFrequency, aes(x = "", y = Frequency, fill = Sentiment))
+
+plot = pieChart + geom_bar(stat = 'identity') + coord_polar("y", start = 0) + theme(axis.title.x = element_blank()) + geom_text(aes(y = Frequency/3 + c(0, cumsum(Frequency)[-length(Frequency)]), label = round(Frequency, 2)), size = 4) + ggtitle('Sentiment division')
+
+plot
+```
+
+Let us now check the frequency in which each different airline company is mentioned in our dataset.
+
+```{r}
+sentimentFrequency = as.data.frame(prop.table(table(airlinetweets$airline)))
+colnames(sentimentFrequency) = c('airline', 'Frequency')
+sentimentFrequency
+```
+
+We can see from the data above that 26% of the tweets were concerning United, almost 20% for US Aurways, 19% for American, 16% for Southwest, 15% for Delta and 3% for Virgin America. It is important to note that we cannot conclude from this data that Virgin America is a better company thanUnited and than Delta is better than American (among many others). Such a comparison needs the analysis of more data related to the number of postive/negative tweets by flight, the relationship between the sentiment and the location (maybe there are some airports where the service is better than in others, etc.). Seo we will analyze the data more in depth and determine what kind of information we can extract from it.
+
+Let us analyse now the propostion of positive, neutral and negative tweets per airline.
+
+```{r}
+sentimentFrequency = as.data.frame(prop.table(table(airlinetweets$airline_sentiment, airlinetweets$airline)))
+colnames(sentimentFrequency) = c('Sentiment', 'Airline', 'Percentage_Tweets')
+
+gbar = ggplot(sentimentFrequency, aes(x = Airline, y = Percentage_Tweets, fill = Sentiment)) + ggtitle('Proportion of Tweets per Airline') +
+theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -1))
+
+plot1 = gbar + geom_bar(stat = 'identity', position = 'fill')
+
+plot1
+
+```
+
+The plot above represents the proportion of tweets per airline. We can see that Virgin America has the highest number of positive tweets and the lowest number of negative tweets, but despite this, the negative tweets weight more than the positive tweets. It is important to note that more than 75% of the tweets of the US Airways are negative, and this makes us want to dig more in the data related to this airline and to try to determine where the bottleneck is. There might be several assumptions about the reasons behind such a low unsatisfaction rate, but we will not make any conclusion about it before looking at the data and analyzing it in order to come up with a final conclusion.
+In general, and for all the airlines in our dataset, the number of negative tweets weight more than the number of postive tweets, and this confirms the tendency of the users to tweet mainly when they receive a bad service and when they want to complain about a specific issue.
+
+Let us now determine the reasons behind the high negative tweets among all the airlines before going in depth in each one of them.
+
+```{r}
+sentimentFrequency = as.data.frame(prop.table(table(airlinetweets$negativereason)))
+colnames(sentimentFrequency) = c('Reason', 'Frequency')
+sentimentFrequency = sentimentFrequency[-1, ]
+sentimentFrequency
+```
+
+The reason with the highest frequency for negative tweets is related to the Customer Service. We will now represent those results in a plot in order to better illustrate those reasons.
+
+```{r}
+p = ggplot(sentimentFrequency, aes(x = Reason, y = Frequency)) + geom_bar(stat = 'identity', fill = 'pink')
+p = p + ggtitle('Reasons for Negative Sentiment')
+p = p + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_text(vjust = -0.1),
+              axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+p
+```
+
+The bad customer service is the main reason behind the complains and negative tweets of the paseengers. This seems to be a general trend, but let us go in depth and analyze the reasons for negative tweets for each airline.
+
+We will now analyze the reasons behind negative tweets for each airline.
+
+```{r}
+American = subset(airlinetweets, airline == 'American')
+USAirways = subset(airlinetweets, airline == 'US Airways')
+Delta = subset(airlinetweets, airline == 'Delta')
+Southwest = subset(airlinetweets, airline = 'Southwest')
+Virgin = subset(airlinetweets, airline = 'Southwest')
+United = subset(airlinetweets, airline = 'United')
+
+p1 = ggplot(as.data.frame(prop.table(table(American$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p1 = p1 + ggtitle('American: Reasons for bad sentiment')
+p1 = p1 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+p2 = ggplot(as.data.frame(prop.table(table(United$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p2 = p2 + ggtitle('United: Reasons for bad sentiment')
+p2 = p2 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+p3 = ggplot(as.data.frame(prop.table(table(USAirways$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p3 = p3 + ggtitle('US Airways: Reasons for bad sentiment')
+p3 = p3 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+p4 = ggplot(as.data.frame(prop.table(table(Delta$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p4 = p4 + ggtitle('Delta: Reasons for bad sentiment')
+p4 = p4 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+p5 = ggplot(as.data.frame(prop.table(table(Southwest$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p5 = p5 + ggtitle('Southwest: Reasons for bad sentiment')
+p5 = p5 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+p6 = ggplot(as.data.frame(prop.table(table(Virgin$negativereason))), aes(x = Var1, y = Freq)) +
+geom_bar(stat = 'identity', fill = 'lightblue')
+p6 = p6 + ggtitle('Virgin: Reasons for bad sentiment')
+p6 = p6 + theme(plot.title = element_text(size = 14, face = 'bold', vjust = 1), axis.title.x = element_blank(),
+                axis.text.x = element_text(angle = 30, size = 10, vjust = 1))
+
+```
+
+Let us now explore the reasons behind the bad sentimen for American.
+
+```{r}
+p1
+```
+
+We can see that American has a Customer Service Issue that is a bit above the tota average (total average around 31%), while is the Damaged Luggage remains a small proportion of the complains.
+
+We will now plot a grid to show the reasons for bad sentiment for Ameircan and the one for all the companies combined. It will allow us to check how American is behaving compared to its competitors. (I will do this for American only in order to stay within the limit of pages of the assignment, but this is an exercise I can do for every airline)
+
+```{r}
+grid.arrange(p1, p, ncol = 1, nrow = 2)
+```
+
+Let us check the reasons for bad assignment for United Airline:
+
+```{r}
+p2
+```
+
+Customer Service remains a critical issue for United airlines as well. Just like American and similar to the general trend of airlines in our dataset, United's clients are mainly reporting the customer service issues on Twitter.
+
+Let us go through the analysis of US Airways:
+
+```{r}
+p3
+```
+
+US Airways passengers are compalining mainly abou the Customer service issues, but also about the late flights (which represent 20% of the total reasons for bad sentiment).
+
+We will now go through the data of Delta:
+
+```{r}
+p4
+```
+
+Delta, and unlike the other airlines we analyzed, is having less customer service issues. Its main problem remains the lateness of its flights. There is also an importnat proportion of passengers (nearly 20%) who did not specify the reasons for the bad sentiments they are having in their tweets.
+
+Let us go through the data of SouthWest Airlines:
+
+```{r}
+p5
+```
+
+SouthWest is aligned with the general trend of the other airlines for their bad custmer service. This represents 31% of their bad sentiment tweets, which is similar to the one of all the airlines combined.
+
+Finally, we will analyze the data of Virgin American:
+
+```{r}
+p6
+```
+
+Virgin American confirms the issue of Customer Service that is pushing the travelers to complain on Twitter. All the other reasons remain similar to the general trend shows in this dataset related to the reasons for bad sentiments in the tweets.
+
+Lastly, we would like to check the locations from where the tweets were issued. We have different options to check the location. we can do tht by using the geographical coordinates in order to have exact information from where the tweets were issued, then we can do that based on the user_timezone, but this remains a bit vague, and we can do it by using the location data that we have in our dataset. In our case, we prefer to use the location for its simplicity, and we will show the top 20 tweet locations of our dataset.
+
+```{r}
+head(unique(airlinetweets$tweet_location), 20)
+```
+
+We can see from the results above that the location data is inconsistent, since it is not checked from the areas from which the tweets was posted, but they are extracted from the location of the user from his/her Twitter profile. We can see that most of the users in this dataset are not mentionning their location (Null Values or "NA" in our dataset), while many other are user fictional locations such as "Lets Play", or "1/1 loner squad", or "Somewhere celebrating life".
+
+At the end of this analysis, we can say that this dataset has been valuable in detecting some trends and learning more about the reasons behind negative sentiments in the tweets, but we believe that it does not give us the opportunity to extract some major elements that can help us better understand and analyse the the reasons behind the issues that all the airlines are having. Information such as the airport name or code could have been extremely valuable since our dataset has cities with more than 1 airport and it would have been interesting to spot in which one(s) the major issues are caused. We could also have gone more in depth to understand the resons included in the "Customer Service Issue" in order to spot the real reasons and then present solutions or approaches to tackle them.
+
+To summarize, this dataset offers enables us to have a good understandong of the reasons pushing internet users to post tweets related to their airlines, despite its low quality of numerical variables, its high proportion of missing values and its inconcistent data. The results found in this analysis are able to guide us throughout the dataset and get a better understanding of its different results.
