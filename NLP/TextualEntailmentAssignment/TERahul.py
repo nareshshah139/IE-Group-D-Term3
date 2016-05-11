@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May 10 20:57:50 2016
-
-@author: rahulmehra
-"""
 import nltk
 from nltk.corpus import rte
 import pandas as pd
@@ -12,11 +6,13 @@ import string
 from nltk.corpus import stopwords
 
 
+ 
 def lemmatize(word):
     lemma = nltk.corpus.wordnet.morphy(word, pos = nltk.corpus.wordnet.VERB)
     if lemma is not None:
         return lemma
     return word
+     
 
 
 stop = stopwords.words('english')
@@ -66,6 +62,9 @@ df_text_tokens['text_tokens_nn'] = df_text_tokens['text_tokens_nw'].apply(lambda
 
 df_h_tokens['hypothesis_tokens_nn'] = df_h_tokens['hypothesis_nw'].apply(lambda x:[lemmatize(item) for item in x])
 
+df_text_tokens['text_tagged'] = df_text_tokens['text_tokens_nn'].apply(lambda row: [nltk.pos_tag(row) for item in row]) 
+
+df_h_tokens['hyp_tagged'] = df_h_tokens['hypothesis_tokens_nn'].apply(lambda row: [nltk.pos_tag(row) for item in row]) 
 
 df = pd.concat([df_text, df_hyp, df_val, df_text_tokens, df_h_tokens], axis=1)
 print(df.head(5))
