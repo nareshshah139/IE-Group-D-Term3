@@ -1,3 +1,4 @@
+# Importing the modules
 import nltk
 from nltk.corpus import rte
 import pandas as pd
@@ -13,16 +14,17 @@ from pyspark.mllib.util import MLUtils
 from pyspark.mllib.tree import GradientBoostedTrees, GradientBoostedTreesModel
 from pyspark.mllib.util import MLUtils
 
-
+# Defining a function for lemmatizing the words in text and hypothesis
 def lemmatize(word):
     lemma = nltk.corpus.wordnet.morphy(word, pos = nltk.corpus.wordnet.VERB)
     if lemma is not None:
         return lemma
     return word
 
-
+# Creating a variable for english stopwords and named it as stop
 stop = stopwords.words('english')
-# parse the XML
+
+# Parse the XML
 print("parsing the XML")
 rte_te = rte.pairs(['/Users/cbrandenburg/documents/ie/courses/term3/nlp/textualentailmentdata.xml'])
 text_ls = []
@@ -38,35 +40,35 @@ for element in range(len(rte_te)):
     text_tokens_ls.append(word_tokenize(rte_te[element].text))
     h_tokens_ls.append(word_tokenize(rte_te[element].hyp))
 
-#print(text_ls)
-#print(hyp_ls)
-#print(val_ls)
-#print(text_tokens_ls)
-#print(h_tokens_ls)
 
-#put values into a DataFrame
+# Put values into a DataFrame
 df_text = pd.DataFrame({'text':text_ls})
 df_hyp = pd.DataFrame({'hypothesis':hyp_ls})
 df_val = pd.DataFrame({'outcome':val_ls})
 df_text_tokens = pd.DataFrame({'text_tokens':text_tokens_ls})
 df_h_tokens = pd.DataFrame({'hypothesis_tokens':h_tokens_ls})
-#df = pd.concat([df_text, df_hyp, df_val, df_text_tokens, df_h_tokens], axis=1) #use this later on to build dataframe from features
 
-#tokens = [i for i in df_text_tokens['text_tokens'][2] if i not in string.punctuation]
-#print(tokens)
+# Removing the punctutations from text and naming it as text_tokens_new
 df_text_tokens['text_tokens_new']=df_text_tokens['text_tokens'].apply(lambda x: [i for i in x
                                                   if i not in string.punctuation])
+
+# Removing the stopwords from text and naming it as text_tokens_nw
 df_text_tokens['text_tokens_nw']=df_text_tokens['text_tokens_new'].apply(lambda x: [item for item in x if item not in stop])
 
-
+# Removing the punctuations from hypothesis and naming it as hypothesis_tokens_new
 df_h_tokens['hypothesis_tokens_new']=df_h_tokens['hypothesis_tokens'].apply(lambda x: [i for i in x
                                                   if i not in string.punctuation])
 
+# Removing the stopwords from hypothesis and naming it as hypothesis_tokens_nw
 df_h_tokens['hypothesis_nw']=df_h_tokens['hypothesis_tokens_new'].apply(lambda x: [item for item in x if item not in stop])
+
+# Lemmatizing the words in text and storing it in variable named text_tokens_nn
 df_text_tokens['text_tokens_nn'] = df_text_tokens['text_tokens_nw'].apply(lambda x:[lemmatize(item) for item in x])
 
+# Lemmatizing the words in hypothesis and storing it in variable named hypothesis_tokens_nn
 df_h_tokens['hypothesis_tokens_nn'] = df_h_tokens['hypothesis_nw'].apply(lambda x:[lemmatize(item) for item in x])
 
+# Concatinating all the variables created to data frame df
 df = pd.concat([df_text, df_hyp, df_val, df_text_tokens, df_h_tokens], axis=1)
 
 #ngram functions
@@ -98,21 +100,13 @@ df['hyp_trigrams'] = df['hypothesis_tokens_nn'].apply(find_trigrams)
 df['hyp_quadgrams'] = df['hypothesis_tokens_nn'].apply(find_quadgrams)
 df['hyp_figrams'] = df['hypothesis_tokens_nn'].apply(find_figrams)
 
+# N-grams overlap
 df["unigram_overlap"] = df.apply(lambda x: len(set(x["text_unigrams"]) & set(x["hyp_unigrams"])), axis = 1)
 df["bigram_overlap"] = df.apply(lambda x: len(set(x["text_bigrams"]) & set(x["hyp_bigrams"])), axis = 1)
 df["trigram_overlap"] = df.apply(lambda x: len(set(x["text_trigrams"]) & set(x["hyp_trigrams"])), axis = 1)
 df["quadgram_overlap"] = df.apply(lambda x: len(set(x["text_quadgrams"]) & set(x["hyp_quadgrams"])), axis = 1)
 df["figram_overlap"] = df.apply(lambda x: len(set(x["text_figrams"]) & set(x["hyp_figrams"])), axis = 1)
 
-# POS Features
-
-# Named Entity Features
-
-
-# Tree Features
-
-
-# Sentiment Features
 
 
 #Extra-unigram Features
@@ -162,4 +156,4 @@ model.save(sc, "target/tmp/myGradientBoostingClassificationModel")
 predicitons =predictions.coalesce(1)
 predictions.saveAsTextFile("Predictions")
 
-#The only things which change in the final 
+
