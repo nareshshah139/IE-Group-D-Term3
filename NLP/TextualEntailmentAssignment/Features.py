@@ -1,4 +1,8 @@
 #After Chris's code
+from pyspark.ml.feature import VectorAssembler
+
+
+
 # N Gram Features
 
 df["unigram_overlap"] = df.apply(lambda x: len(set(x["text_unigrams"]) & set(x["hyp_unigrams"])), axis = 1)
@@ -26,4 +30,9 @@ df["figram_overlap"] = df.apply(lambda x: len(set(x["text_figrams"]) & set(x["hy
 
 
 # After building features convert to sparkSQL dataframe
-sqlCtx.createDataFrame(df)
+dfs = sqlCtx.createDataFrame(df)
+
+#Machine Learning
+assembler = VectorAssembler(inputCols =["unigram_overlap","bigram_overlap","trigram_overlap","quadgram_overlap","figram_overlap"],outputCol ="entailment")
+
+transformed = assembler.transform(dfs)
