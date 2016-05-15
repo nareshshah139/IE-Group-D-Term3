@@ -57,3 +57,15 @@ testErr = labelsAndPredictions.filter(lambda x: x[0] != x[1]).count() / float(te
 print('Test Error = ' + str(testErr))
 # Similar performance.
 
+#Model for test dataset
+#Run the same pre processing and parsing steps
+#Building a model
+model = GradientBoostedTrees.trainClassifier(rddLPs,categoricalFeaturesInfo={},numIterations=10)
+predictions = model.predict(newData.map(lambda x: x.features))
+
+#Saving the model and the predictions
+model.save(sc, "target/tmp/myGradientBoostingClassificationModel")
+predicitons =predictions.coalesce(1)
+predictions.saveAsTextFile("Users/naresh/Downloads/Predictions")
+print('Test Error = ' + str(testErr))
+
