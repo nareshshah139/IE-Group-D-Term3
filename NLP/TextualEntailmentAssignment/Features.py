@@ -24,3 +24,5 @@ df["figram_overlap"] = df.apply(lambda x: len(set(x["text_figrams"]) & set(x["hy
 
 
 
+
+# After building features convert to sparkSQL dataframe
