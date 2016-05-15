@@ -1,6 +1,7 @@
 #After Chris's code
 from pyspark.ml.feature import VectorAssembler
-
+from pyspark.mllib.regression import LabeledPoint
+from pyspark.sql.functions import col
 
 
 # N Gram Features
@@ -36,3 +37,5 @@ dfs = sqlCtx.createDataFrame(df)
 assembler = VectorAssembler(inputCols =["unigram_overlap","bigram_overlap","trigram_overlap","quadgram_overlap","figram_overlap"],outputCol ="entailment")
 
 transformed = assembler.transform(dfs)
+
+LPs =transformed.select(col("entailment").alias("label"),col("unigram_overlap").alias("features")).map(lambda row: LabeledPoint(row.label,row.features))
