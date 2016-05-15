@@ -40,3 +40,5 @@ transformed = assembler.transform(dfs)
 
 LPs =transformed.select(col("outcome").alias("label"),col("unigram_overlap").alias("features")).map(lambda row: LabeledPoint(row.label,row.features))
 rddLPs = dfs.map(lambda row: LabeledPoint(row["outcome"],[row[-5:]]))
+(trainingData, testData) =rddLPs.randomSplit([0.7, 0.3])
+
