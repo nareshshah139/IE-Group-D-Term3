@@ -28,6 +28,9 @@ df["figram_overlap"] = df.apply(lambda x: len(set(x["text_figrams"]) & set(x["hy
 # Sentiment Features
 
 
+#Extra-unigram Features
+df["hyp_extra"]= df.apply(lambda x: len(set(x["hyp_unigrams"]) - set(x["text_unigrams"])), axis = 1)
+df["text_extra"]= df.apply(lambda x: len(set(x["text_unigrams"]) - set(x["hyp_unigrams"])), axis = 1)
 
 
 # After building features convert to sparkSQL dataframe
