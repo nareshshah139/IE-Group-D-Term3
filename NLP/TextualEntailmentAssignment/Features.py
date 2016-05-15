@@ -34,8 +34,8 @@ df["figram_overlap"] = df.apply(lambda x: len(set(x["text_figrams"]) & set(x["hy
 dfs = sqlCtx.createDataFrame(df)
 
 #Machine Learning
-assembler = VectorAssembler(inputCols =["unigram_overlap","bigram_overlap","trigram_overlap","quadgram_overlap","figram_overlap"],outputCol ="entailment")
+assembler = VectorAssembler(inputCols =["unigram_overlap","bigram_overlap","trigram_overlap","quadgram_overlap","figram_overlap"],outputCol ="outcome")
 
 transformed = assembler.transform(dfs)
 
-LPs =transformed.select(col("entailment").alias("label"),col("unigram_overlap").alias("features")).map(lambda row: LabeledPoint(row.label,row.features))
+LPs =transformed.select(col("outcome").alias("label"),col("unigram_overlap").alias("features")).map(lambda row: LabeledPoint(row.label,row.features))
