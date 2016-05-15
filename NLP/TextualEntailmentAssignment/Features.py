@@ -41,4 +41,12 @@ transformed = assembler.transform(dfs)
 LPs =transformed.select(col("outcome").alias("label"),col("unigram_overlap").alias("features")).map(lambda row: LabeledPoint(row.label,row.features))
 rddLPs = dfs.map(lambda row: LabeledPoint(row["outcome"],[row[-5:]]))
 (trainingData, testData) =rddLPs.randomSplit([0.7, 0.3])
+model = RandomForest.trainClassifier(trainingData, numClasses=2, categoricalFeaturesInfo={},
+                                     numTrees=3, featureSubsetStrategy="auto",
+                                     impurity='gini', maxDepth=4, maxBins=32)
+predictions = model.predict(testData.map(lambda x: x.features))
+labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
+testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(testData.count())
+print('Test Error = ' + str(testErr))
+
 
