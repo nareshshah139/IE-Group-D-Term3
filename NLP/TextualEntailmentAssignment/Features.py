@@ -49,6 +49,7 @@ labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 testErr = labelsAndPredictions.filter(lambda x: x[0] != x[1]).count() / float(testData.count())
 print('Test Error = ' + str(testErr))
 
+#Another Model
 model = GradientBoostedTrees.trainClassifier(trainingData,categoricalFeaturesInfo={}, numIterations=10)
 predictions = model.predict(testData.map(lambda x: x.features))
 labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
