@@ -153,6 +153,8 @@ print('Test Error = ' + str(testErr))
 #Building a model
 model = GradientBoostedTrees.trainClassifier(rddLPs,categoricalFeaturesInfo={},numIterations=10)
 predictions = model.predict(newData.map(lambda x: x.features))
+labelsAndPredictions = newData.map(lambda lp: lp.label).zip(predictions)
+testErr = labelsAndPredictions.filter(lambda x: x[0] != x[1]).count() / float(newData.count())
 print('Test Error = ' + str(testErr))
 
 #Saving the model and the predictions
