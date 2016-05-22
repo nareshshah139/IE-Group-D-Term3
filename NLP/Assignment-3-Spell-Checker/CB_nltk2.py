@@ -46,8 +46,11 @@ word_freq = pd.DataFrame(word_freq)
 #df = word_dist.join(word_freq, on=['word'], how='outer')
 #Idea: additioanl feature to ensure we propose the correct word could be to look at the length of the word and give higher importance to words that have the same length in df['item'] and df['word']. Works well for "todya" does not work well for "helo"
 result = pd.merge(word_dist,word_freq,on="words")
+result["length_word"] = result["words"].apply(lambda x: len(x))
+result["length_item"] = result["item"].apply(lambda x: len(x))
+result["length_match"] = result["length_item"]==result["length_word"]
 print(result.head(5))
-result = result.sort_values(by ="frequency",ascending = False)
+result = result.sort_values(by =["distance","frequency", "length_match"],ascending = [True,False,True])
 
 for word in set(result["item"]):
     print(word,result["words"][result["item"]== word].head(5),result["frequency"][result["item"]== word].head(5))
