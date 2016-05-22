@@ -27,7 +27,7 @@ word_dist = []
 for item in incorrect_words:
     for word in words:
         if(edit_distance(item,word) < 3):
-            word_dist.append({'item':item,'word':word,'distance':edit_distance(item,word)})
+            word_dist.append({'item':item,'words':word,'distance':edit_distance(item,word)})
 word_dist = pd.DataFrame(word_dist)
 print(word_dist)
 
@@ -42,9 +42,15 @@ word_freq = pd.DataFrame(word_freq)
 #print(word_freq.head(5))
 
 #try to work out this join
-df = word_dist.join(word_freq, on=['word'], how='outer')
-print(df.head(5))
+#print(df.head(5))
+#df = word_dist.join(word_freq, on=['word'], how='outer')
 #Idea: additioanl feature to ensure we propose the correct word could be to look at the length of the word and give higher importance to words that have the same length in df['item'] and df['word']. Works well for "todya" does not work well for "helo"
+result = pd.merge(word_dist,word_freq,on="words")
+print(result.head(5))
+result = result.sort_values(by ="frequency",ascending = False)
+
+for word in set(result["item"]):
+    print(word,result["words"][result["item"]== word].head(5),result["frequency"][result["item"]== word].head(5))
 
 
 
