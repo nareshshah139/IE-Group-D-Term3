@@ -133,4 +133,5 @@ def value_transformation(x):
             print("Invalid input")
     df.to_csv("output_test.csv")
     print("STATUS: The dataframe has beeen saved as output_test.csv")
+    print(df.head(5))
 
