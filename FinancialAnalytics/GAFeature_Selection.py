@@ -48,6 +48,10 @@ def feature_selection(df,dfo,target_column,id_column):
   dfo = The test dataframe
   target_column = The column containing the target variable
   id_column = The column containing the id variable
+  
+  Based on the output column type (binary or numeric), it decides on the type of problem we are trying to solve.
+  If the output column is binary (0/1), we use Genetic Algorithms for feature selection.
+  If the 
   """
     print("IDENTIFYING TYPES...")
     in_model = []
