@@ -29,6 +29,14 @@ dfo = pd.read_csv("https://dl.dropboxusercontent.com/u/28535341/oot0.csv")#OUT-O
 target_column = "ob_target"
 
 def rank_to_dict(ranks, names, order=1):
+  """ 
+  ranks:
+  names: 
+  order:
+  
+  
+  
+  """
     minmax = MinMaxScaler()
     ranks = minmax.fit_transform(order*np.array([ranks]).T).T[0]
     ranks = map(lambda x: round(x, 2), ranks)
@@ -157,7 +165,7 @@ def feature_selection(df,dfo,target_column,id_column):
     ####
     if method_type == "numerical":
         X_train=df[var_model]
-        Y_train=df["if_var_73"]
+        Y_train=df[output_var]
         
         names = list(X_train)
         ranks = {}
