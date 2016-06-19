@@ -57,6 +57,6 @@ def Variable_create(dataset):
                 training[columns2].fillna(training[columns2].median(),inplace = True)
                 training["Division_column_"+str(i)] = training[columns1] / training[columns2]
                 i = i+1
-
+    
     print(training.head())
-
+    return training
