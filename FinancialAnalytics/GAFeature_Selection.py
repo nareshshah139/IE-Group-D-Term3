@@ -43,8 +43,12 @@ def rank_to_dict(ranks, names, order=1):
     return dict(zip(names, ranks))
 
 def feature_selection(df,dfo,target_column,id_column):
-    
-
+  """
+  df = The training dataframe
+  dfo = The test dataframe
+  target_column = The column containing the target variable
+  id_column = The column containing the id variable
+  """
     print("IDENTIFYING TYPES...")
     in_model = []
     list_ib = set()  #input binary
