@@ -34,7 +34,7 @@ def rank_to_dict(ranks, names, order=1):
     ranks = map(lambda x: round(x, 2), ranks)
     return dict(zip(names, ranks))
 
-def feature_selection(df,dfo,target_column):
+def feature_selection(df,dfo,target_column,id_column):
     
 
     print("IDENTIFYING TYPES...")
