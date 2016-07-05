@@ -1,0 +1,25 @@
+[Settings]
+
+; Your twitch username
+username = nareshshah139
+ 
+; Your twitch oauth, grab yours at www.twitchapps.com/tmi
+oauth = oauth:rkm297uid12ze9i0uz99xy5onaeolh
+
+; record raw IRC messages?
+record_raw = 1
+
+; log your own chanel?
+log_self = 1
+
+; timestamp format
+; 0 for unix timestamp: 1427139635.0058
+; 1 for human readable timestamp in UTC: 2015-03-23T19:40:35Z
+; 2 for human readable timestamp in your local time: 2015-03-23T14:40:35-05:00
+timestamp_format = 1
+
+; Chat server addresses
+; if it doesn't work change it based on twitchstatus.com/#chat
+regular_chat_server = irc.twitch.tv:6667
+group_chat_server = 199.9.253.119:443
+event_chat_server = 192.16.64.150:443
