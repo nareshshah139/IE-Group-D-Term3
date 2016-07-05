@@ -9,3 +9,4 @@ Group work Programming Projects in:
 3. Analytics for Retail and Consumer Goods
 4. Natural Language Processing
 5. Machine Learning for Business
+6. Stream Processing
